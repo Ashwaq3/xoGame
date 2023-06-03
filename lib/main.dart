@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'game_screen.dart';
+import 'logic.dart';
 
 void main() => runApp(const MyApp());
 
@@ -22,7 +24,9 @@ class MyApp extends StatelessWidget {
         shadowColor: Colors.amberAccent,
 
       ),
-      home: const GameScreen()
+      home:ChangeNotifierProvider(
+         create: (_) => Game(),
+          child:const GameScreen())
     );
   }
 }
