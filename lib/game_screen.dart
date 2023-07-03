@@ -1,29 +1,35 @@
 import 'package:flutter/material.dart';
+
 import 'package:provider/provider.dart';
-import 'package:xogame/logic.dart';
+
+import 'game_logic.dart';
 
 class GameScreen extends StatelessWidget {
   const GameScreen({super.key});
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
           child: Column(
-        children: [
-          Consumer<Game>(builder: (_, val, __) {
-            return Text("It's ${val.activePlayer} turn".toUpperCase(),
-                style: const TextStyle(fontSize: 52));
-          }),
-          buildGameGrid(context),
-         ...buildLastBlock(context)
+            children: [
+              buildActivePlayerWidget(context: context),
+              buildGameBoard(context: context),
+              if (Provider.of<GameLogic>(context).isGameOver) buildResultWidget(context: context),
+              buildResetButton(context: context)
         ],
       )),
     );
   }
 
-  Expanded buildGameGrid(BuildContext context) {
+  Widget buildActivePlayerWidget({required BuildContext context}) {
+    return Consumer<GameLogic>(builder: (_, val, __) {
+      return Text("It's ${val.activePlayer} turn".toUpperCase(),
+          style: const TextStyle(fontSize: 52));
+    });
+  }
+
+  Expanded buildGameBoard({required BuildContext context}) {
     return Expanded(
         child: GridView.count(
             padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -33,49 +39,46 @@ class GameScreen extends StatelessWidget {
             childAspectRatio: 1,
             children: List.generate(
                 9,
-                (index) => InkWell(
-                      onTap: Provider.of<Game>(context).isGameOver ? null : () => Provider.of<Game>(context, listen: false).playGame(index),
-                      child: Container(
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                            color: Theme.of(context).shadowColor,
-                            borderRadius: BorderRadius.circular(5)),
-                        child: Consumer<Game>(
-                          builder: (_, val, __) {
-                            return Text(val.boardFields[index],
-                              style: TextStyle(
-                                  color:  val.boardFields[index] == "X"
-                                      ? Colors.white
-                                      : Colors.deepOrange,
-                                  fontSize: 52),
-                            );
-                          }
-                        ),
-                      ),
-                    ))));
+                (index) => buildBoardField(context: context, index: index))));
   }
 
-  List<Widget> buildLastBlock(BuildContext context) {
-    return [if (Provider.of<Game>(context).isGameOver) buildResultTitle(context),
-      buildRepeatButton(context)
-    ];
-  }
-
-  Widget buildResultTitle(BuildContext context) {
-
-    return Consumer<Game>(
-      builder: (_, val, __) {
-        return Text("Results: ${val.gameResult}",
-            style: TextStyle(fontSize: 24, color: Colors.white.withOpacity(0.5)));
-      }
+  Widget buildBoardField({required BuildContext context, required int index}) {
+    return InkWell(
+      onTap: () =>
+          Provider.of<GameLogic>(context, listen: false)
+              .playGame(index: index),
+      child: Container(
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+            color: Theme.of(context).shadowColor,
+            borderRadius: BorderRadius.circular(5)),
+        child: Consumer<GameLogic>(builder: (_, val, __) {
+          return Text(
+            val.boardFields[index],
+            style: TextStyle(
+                color: val.boardFields[index] == "X"
+                    ? Colors.white
+                    : Colors.deepOrange,
+                fontSize: 52),
+          );
+        }),
+      ),
     );
   }
 
-  Widget buildRepeatButton(BuildContext context) {
+  Widget buildResultWidget({required BuildContext context}) {
+    return Consumer<GameLogic>(builder: (_, val, __) {
+      return Text("Winner: ${val.gameResult}",
+          style: TextStyle(fontSize: 24, color: Colors.white.withOpacity(0.5)));
+    });
+  }
+
+  Widget buildResetButton({required BuildContext context}) {
     return ElevatedButton.icon(
-      onPressed:() => Provider.of<Game>(context, listen: false).resetGame(),
+      onPressed: () =>
+          Provider.of<GameLogic>(context, listen: false).resetGame(),
       icon: const Icon(Icons.replay),
-      label: const Text("Repeat"),
+      label: const Text("Reset"),
       style: ButtonStyle(
           backgroundColor:
               MaterialStateProperty.all(Theme.of(context).splashColor)),
